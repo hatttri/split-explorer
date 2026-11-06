@@ -4,9 +4,13 @@ Windows 標準のフォルダビュー（IExplorerBrowser）を 2×2 の 4 ペ�
 
 ## ビルドと起動
 
-1. `build.cmd` を実行すると `SplitExplorer.exe` ができます。
-2. `SplitExplorer.exe` をダブルクリックして起動します。追加ランタイムは不要です。
-3. 起動時に最大 4 つのパスを引数で渡せます（例: `SplitExplorer.exe C:\Windows D:\Work`）。
+ビルドには .NET SDK 9.0.200 以降が必要です（実行時は不要です）。
+
+1. `dotnet publish src\SplitExplorer\SplitExplorer.csproj -c Release -o publish` を実行すると `publish\SplitExplorer.exe` ができます。
+2. `publish\SplitExplorer.exe` をダブルクリックして起動します。.NET Framework 4.8（Windows 10 22H2 / Windows 11 に標準搭載）以外の追加ランタイムは不要で、exe 単体をコピーしても動作します。
+3. 起動時に最大 4 つのパスを引数で渡せます（例: `publish\SplitExplorer.exe C:\Windows D:\Work`）。
+
+開発時は `dotnet build` でビルドできます。ソースは `src\SplitExplorer` 以下にあります。
 
 ## 主な操作
 

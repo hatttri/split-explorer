@@ -1,11 +1,13 @@
 # ビルド生成物
 /SplitExplorer.exe
+/publish/
 *.pdb
 *.mdb
 *.obj
 
 # 実行時の状態ファイル
-/SplitExplorer.state
+SplitExplorer.state
+state.txt
 
 # Visual Studio / MSBuild
 .vs/
