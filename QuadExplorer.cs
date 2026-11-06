@@ -2315,126 +2315,6 @@ namespace QuadExplorer
 
     #region MainForm
 
-    internal enum SplitterKind
-    {
-        Vertical,
-        Horizontal,
-        Both
-    }
-
-    internal sealed class SplitterControl : Control
-    {
-        private readonly MainForm _form;
-        private readonly SplitterKind _kind;
-        private bool _dragging;
-
-        public SplitterControl(MainForm form, SplitterKind kind)
-        {
-            _form = form;
-            _kind = kind;
-
-            SetStyle(
-                ControlStyles.UserPaint |
-                ControlStyles.AllPaintingInWmPaint |
-                ControlStyles.Opaque |
-                ControlStyles.OptimizedDoubleBuffer |
-                ControlStyles.ResizeRedraw,
-                true);
-            DoubleBuffered = true;
-            BackColor = SystemColors.Control;
-            TabStop = false;
-
-            if (kind == SplitterKind.Vertical)
-            {
-                Cursor = Cursors.SizeWE;
-            }
-            else if (kind == SplitterKind.Horizontal)
-            {
-                Cursor = Cursors.SizeNS;
-            }
-            else
-            {
-                Cursor = Cursors.SizeAll;
-            }
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            Graphics g = e.Graphics;
-            g.Clear(SystemColors.Control);
-
-            using (Pen pen = new Pen(SystemColors.ControlDark))
-            {
-                if (_kind == SplitterKind.Vertical)
-                {
-                    int x = Width / 2;
-                    g.DrawLine(pen, x, 0, x, Height);
-                }
-                else if (_kind == SplitterKind.Horizontal)
-                {
-                    int y = Height / 2;
-                    g.DrawLine(pen, 0, y, Width, y);
-                }
-                else
-                {
-                    using (SolidBrush brush = new SolidBrush(SystemColors.ControlDark))
-                    {
-                        g.FillRectangle(brush, 1, 1, Math.Max(1, Width - 2), Math.Max(1, Height - 2));
-                    }
-                }
-            }
-        }
-
-        protected override void OnMouseDown(MouseEventArgs e)
-        {
-            base.OnMouseDown(e);
-            if (e.Button == MouseButtons.Left)
-            {
-                _dragging = true;
-                Capture = true;
-            }
-        }
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            base.OnMouseMove(e);
-            if (_dragging)
-            {
-                _form.DragSplitter(_kind, Cursor.Position);
-            }
-        }
-
-        protected override void OnMouseUp(MouseEventArgs e)
-        {
-            base.OnMouseUp(e);
-            if (e.Button == MouseButtons.Left)
-            {
-                _dragging = false;
-                Capture = false;
-            }
-        }
-
-        protected override void OnMouseDoubleClick(MouseEventArgs e)
-        {
-            base.OnMouseDoubleClick(e);
-            if (e.Button == MouseButtons.Left)
-            {
-                _dragging = false;
-                Capture = false;
-                _form.ResetSplit(_kind);
-            }
-        }
-
-        protected override void OnMouseCaptureChanged(EventArgs e)
-        {
-            base.OnMouseCaptureChanged(e);
-            if (!Capture)
-            {
-                _dragging = false;
-            }
-        }
-    }
-
     internal sealed class MainForm : Form, IMessageFilter
     {
         private sealed class RestoreJob
@@ -2445,9 +2325,6 @@ namespace QuadExplorer
         }
 
         private readonly Pane[] _panes = new Pane[4];
-        private readonly SplitterControl _verticalSplitter;
-        private readonly SplitterControl _horizontalSplitter;
-        private readonly SplitterControl _crossSplitter;
         private readonly Timer _focusTimer;
         private readonly Timer _restoreTimer;
         private readonly Queue<RestoreJob> _restoreQueue = new Queue<RestoreJob>();
@@ -2456,9 +2333,6 @@ namespace QuadExplorer
         private readonly string[] _initialArgs;
 
         private Pane _activePane;
-        private double _splitX = 0.5;
-        private double _splitY = 0.5;
-        private float _scale = 1f;
         private bool _layingOut;
         private bool _uiReady;
         private bool _restoreComplete;
@@ -2476,9 +2350,6 @@ namespace QuadExplorer
             DoubleBuffered = true;
             MinimumSize = new Size(800, 500);
 
-            _splitX = ClampRatio(_state.SplitX);
-            _splitY = ClampRatio(_state.SplitY);
-
             ApplyInitialBounds(_state);
 
             for (int i = 0; i < 4; i++)
@@ -2487,14 +2358,6 @@ namespace QuadExplorer
                 _panes[i] = pane;
                 Controls.Add(pane);
             }
-
-            _verticalSplitter = new SplitterControl(this, SplitterKind.Vertical);
-            _horizontalSplitter = new SplitterControl(this, SplitterKind.Horizontal);
-            _crossSplitter = new SplitterControl(this, SplitterKind.Both);
-            Controls.Add(_verticalSplitter);
-            Controls.Add(_horizontalSplitter);
-            Controls.Add(_crossSplitter);
-            _crossSplitter.BringToFront();
 
             _focusTimer = new Timer();
             _focusTimer.Interval = 100;
@@ -2623,7 +2486,6 @@ namespace QuadExplorer
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            _scale = Native.GetScale(this);
             LayoutAll();
         }
 
@@ -2631,7 +2493,6 @@ namespace QuadExplorer
         {
             base.OnShown(e);
 
-            _scale = Native.GetScale(this);
             LayoutAll();
             SetActivePane(_panes[0]);
             _focusTimer.Start();
@@ -2652,25 +2513,6 @@ namespace QuadExplorer
             LayoutAll();
         }
 
-        private int Scale(int pixels)
-        {
-            int value = (int)Math.Round(pixels * _scale);
-            return value < 1 ? 1 : value;
-        }
-
-        private static double ClampRatio(double value)
-        {
-            if (value < 0.1)
-            {
-                return 0.1;
-            }
-            if (value > 0.9)
-            {
-                return 0.9;
-            }
-            return value;
-        }
-
         internal void LayoutAll()
         {
             if (!_uiReady || _layingOut || _shutDown)
@@ -2684,112 +2526,30 @@ namespace QuadExplorer
             {
                 int width = ClientSize.Width;
                 int height = ClientSize.Height;
-                int thickness = Scale(4);
-                int usableWidth = width - thickness;
-                int usableHeight = height - thickness;
-                if (usableWidth < 2)
+                if (width < 2)
                 {
-                    usableWidth = 2;
+                    width = 2;
                 }
-                if (usableHeight < 2)
+                if (height < 2)
                 {
-                    usableHeight = 2;
+                    height = 2;
                 }
 
-                int left = (int)Math.Round(usableWidth * _splitX);
-                int top = (int)Math.Round(usableHeight * _splitY);
-                if (left < 1)
-                {
-                    left = 1;
-                }
-                if (left > usableWidth - 1)
-                {
-                    left = usableWidth - 1;
-                }
-                if (top < 1)
-                {
-                    top = 1;
-                }
-                if (top > usableHeight - 1)
-                {
-                    top = usableHeight - 1;
-                }
-
-                int right = width - thickness - left;
-                int bottom = height - thickness - top;
-                if (right < 1)
-                {
-                    right = 1;
-                }
-                if (bottom < 1)
-                {
-                    bottom = 1;
-                }
+                int left = width / 2;
+                int top = height / 2;
+                int right = width - left;
+                int bottom = height - top;
 
                 _panes[0].SetBounds(0, 0, left, top);
-                _panes[1].SetBounds(left + thickness, 0, right, top);
-                _panes[2].SetBounds(0, top + thickness, left, bottom);
-                _panes[3].SetBounds(left + thickness, top + thickness, right, bottom);
-
-                _verticalSplitter.SetBounds(left, 0, thickness, height);
-                _horizontalSplitter.SetBounds(0, top, width, thickness);
-                _crossSplitter.SetBounds(left, top, thickness, thickness);
-
-                _verticalSplitter.BringToFront();
-                _horizontalSplitter.BringToFront();
-                _crossSplitter.BringToFront();
+                _panes[1].SetBounds(left, 0, right, top);
+                _panes[2].SetBounds(0, top, left, bottom);
+                _panes[3].SetBounds(left, top, right, bottom);
             }
             finally
             {
                 ResumeLayout(false);
                 _layingOut = false;
             }
-        }
-
-        internal void DragSplitter(SplitterKind kind, Point screenPoint)
-        {
-            if (_shutDown)
-            {
-                return;
-            }
-
-            Point point = PointToClient(screenPoint);
-            int thickness = Scale(4);
-            int usableWidth = ClientSize.Width - thickness;
-            int usableHeight = ClientSize.Height - thickness;
-            if (usableWidth < 1)
-            {
-                usableWidth = 1;
-            }
-            if (usableHeight < 1)
-            {
-                usableHeight = 1;
-            }
-
-            if (kind == SplitterKind.Vertical || kind == SplitterKind.Both)
-            {
-                double ratio = (point.X - thickness / 2.0) / usableWidth;
-                _splitX = ClampRatio(ratio);
-            }
-            if (kind == SplitterKind.Horizontal || kind == SplitterKind.Both)
-            {
-                double ratio = (point.Y - thickness / 2.0) / usableHeight;
-                _splitY = ClampRatio(ratio);
-            }
-            LayoutAll();
-        }
-
-        internal void ResetSplit(SplitterKind kind)
-        {
-            if (kind == SplitterKind.Vertical || kind == SplitterKind.Both)
-            {
-                _splitX = 0.5;
-            }
-            if (kind == SplitterKind.Horizontal || kind == SplitterKind.Both)
-            {
-                _splitY = 0.5;
-            }
-            LayoutAll();
         }
 
         internal void SetActivePane(Pane pane)
@@ -3103,8 +2863,6 @@ namespace QuadExplorer
                     state.Window = bounds;
                 }
                 state.Maximized = WindowState == FormWindowState.Maximized;
-                state.SplitX = _splitX;
-                state.SplitY = _splitY;
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -3173,15 +2931,11 @@ namespace QuadExplorer
         public bool HasWindow;
         public Rectangle Window;
         public bool Maximized;
-        public double SplitX;
-        public double SplitY;
         public List<string>[] PaneTabs;
         public int[] ActiveTab;
 
         public AppState()
         {
-            SplitX = 0.5;
-            SplitY = 0.5;
             PaneTabs = new List<string>[4];
             ActiveTab = new int[4];
             for (int i = 0; i < 4; i++)
@@ -3264,10 +3018,6 @@ namespace QuadExplorer
                 {
                     ParseWindow(state, value);
                 }
-                else if (string.Equals(key, "split", StringComparison.OrdinalIgnoreCase))
-                {
-                    ParseSplit(state, value);
-                }
                 else if (key.StartsWith("pane", StringComparison.OrdinalIgnoreCase))
                 {
                     ParsePaneLine(state, key, value);
@@ -3302,26 +3052,6 @@ namespace QuadExplorer
             state.HasWindow = true;
             state.Window = new Rectangle(x, y, width, height);
             state.Maximized = ParseBool(parts[4]);
-        }
-
-        private static void ParseSplit(AppState state, string value)
-        {
-            string[] parts = value.Split(',');
-            if (parts.Length < 2)
-            {
-                return;
-            }
-
-            double x;
-            double y;
-            if (double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out x))
-            {
-                state.SplitX = ClampRatio(x);
-            }
-            if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out y))
-            {
-                state.SplitY = ClampRatio(y);
-            }
         }
 
         private static void ParsePaneLine(AppState state, string key, string value)
@@ -3383,12 +3113,6 @@ namespace QuadExplorer
                 builder.Append(state.Maximized ? "1" : "0");
                 builder.AppendLine();
             }
-
-            builder.Append("split=");
-            builder.Append(state.SplitX.ToString("0.######", CultureInfo.InvariantCulture));
-            builder.Append(',');
-            builder.Append(state.SplitY.ToString("0.######", CultureInfo.InvariantCulture));
-            builder.AppendLine();
 
             for (int i = 0; i < 4; i++)
             {
@@ -3533,19 +3257,6 @@ namespace QuadExplorer
                 return number != 0;
             }
             return false;
-        }
-
-        private static double ClampRatio(double value)
-        {
-            if (value < 0.1)
-            {
-                return 0.1;
-            }
-            if (value > 0.9)
-            {
-                return 0.9;
-            }
-            return value;
         }
 
         private static string SanitizePath(string path)
