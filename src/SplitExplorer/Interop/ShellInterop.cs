@@ -15,6 +15,9 @@ namespace SplitExplorer
 
         public static readonly Guid IID_IShellItem =
             new Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE");
+
+        public static readonly Guid IID_IShellView =
+            new Guid("000214E3-0000-0000-C000-000000000046");
     }
 
     [ComImport]
@@ -37,6 +40,30 @@ namespace SplitExplorer
         void FillFromObject([MarshalAs(UnmanagedType.IUnknown)] object punk, int dwFlags);
         void RemoveAll();
         void GetCurrentView(ref Guid riid, out IntPtr ppv);
+    }
+
+    [ComImport]
+    [Guid("000214E3-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IShellView
+    {
+        [PreserveSig]
+        int GetWindow(out IntPtr hwnd);
+
+        [PreserveSig]
+        int ContextSensitiveHelp([MarshalAs(UnmanagedType.Bool)] bool enterMode);
+
+        [PreserveSig]
+        int TranslateAccelerator(ref Native.MSG msg);
+
+        [PreserveSig]
+        int EnableModeless([MarshalAs(UnmanagedType.Bool)] bool enable);
+
+        [PreserveSig]
+        int UIActivate(uint state);
+
+        [PreserveSig]
+        int Refresh();
     }
 
     [ComImport]

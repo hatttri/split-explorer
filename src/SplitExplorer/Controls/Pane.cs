@@ -17,6 +17,7 @@ namespace SplitExplorer
         private readonly Button _backButton;
         private readonly Button _forwardButton;
         private readonly Button _upButton;
+        private readonly Button _refreshButton;
         private readonly TextBox _addressBox;
         private readonly ViewPanel _viewHost;
         private readonly List<Tab> _tabs = new List<Tab>();
@@ -51,6 +52,9 @@ namespace SplitExplorer
             _backButton = CreateNavButton("\u25C0");
             _forwardButton = CreateNavButton("\u25B6");
             _upButton = CreateNavButton("\u25B2");
+            _refreshButton = CreateNavButton("\u21BB");
+            _refreshButton.AccessibleName = "最新の状態へ更新";
+            _refreshButton.Click += delegate { RefreshActiveTab(); };
 
             _addressBox = new TextBox();
             _addressBox.BorderStyle = BorderStyle.FixedSingle;
@@ -69,6 +73,7 @@ namespace SplitExplorer
             Controls.Add(_backButton);
             Controls.Add(_forwardButton);
             Controls.Add(_upButton);
+            Controls.Add(_refreshButton);
             Controls.Add(_addressBox);
 
             _addressFlashTimer = new Timer();
@@ -185,7 +190,7 @@ namespace SplitExplorer
             int border = Scale(2);
             int tabWidth = Math.Max(Scale(96), (int)Math.Round(ClientSize.Width * 0.15));
             int navHeight = Scale(30);
-            int buttonWidth = Math.Max(Scale(24), (tabWidth - border * 2 - Scale(4)) / 3);
+            int buttonWidth = Math.Max(Scale(18), (tabWidth - border * 2 - Scale(6)) / 4);
             int buttonGap = Scale(2);
             int inset = Scale(1);
 
@@ -199,6 +204,7 @@ namespace SplitExplorer
             _backButton.SetBounds(sidebarX, border, buttonWidth, navHeight);
             _forwardButton.SetBounds(sidebarX + buttonWidth + buttonGap, border, buttonWidth, navHeight);
             _upButton.SetBounds(sidebarX + (buttonWidth + buttonGap) * 2, border, buttonWidth, navHeight);
+            _refreshButton.SetBounds(sidebarX + (buttonWidth + buttonGap) * 3, border, buttonWidth, navHeight);
             int tabY = border + navHeight + buttonGap;
             _tabStrip.SetBounds(sidebarX, tabY, tabWidth - border, Math.Max(1, ClientSize.Height - tabY - border));
 
@@ -393,6 +399,7 @@ namespace SplitExplorer
             _backButton.Enabled = tab != null && tab.CanGoBack;
             _forwardButton.Enabled = tab != null && tab.CanGoForward;
             _upButton.Enabled = tab != null;
+            _refreshButton.Enabled = tab != null;
         }
 
         internal void NewTab()
@@ -588,6 +595,15 @@ namespace SplitExplorer
             {
                 tab.GoUp();
                 UpdateNavButtons();
+            }
+        }
+
+        internal void RefreshActiveTab()
+        {
+            Tab tab = ActiveTab;
+            if (tab != null)
+            {
+                tab.Refresh();
             }
         }
 

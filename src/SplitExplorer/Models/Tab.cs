@@ -284,6 +284,23 @@ namespace SplitExplorer
             }
         }
 
+        internal void Refresh()
+        {
+            if (_disposed || _host == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _host.Refresh();
+            }
+            catch (Exception)
+            {
+                _pane.OnTabNavigationFailed(this);
+            }
+        }
+
         private void HandleNavigationFailure()
         {
             if (_disposed)

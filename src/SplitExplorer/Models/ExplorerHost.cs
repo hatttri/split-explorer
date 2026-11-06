@@ -137,6 +137,47 @@ namespace SplitExplorer
             }
         }
 
+        public void Refresh()
+        {
+            if (_disposed || _browser == null)
+            {
+                throw new ObjectDisposedException("ExplorerHost");
+            }
+
+            Guid iid = ShellIds.IID_IShellView;
+            IntPtr viewPointer = IntPtr.Zero;
+            object viewObject = null;
+            try
+            {
+                _browser.GetCurrentView(ref iid, out viewPointer);
+                if (viewPointer == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("The current Shell view is unavailable.");
+                }
+
+                viewObject = Marshal.GetObjectForIUnknown(viewPointer);
+                IShellView view = viewObject as IShellView;
+                if (view == null)
+                {
+                    throw new InvalidCastException("The current view does not support IShellView.");
+                }
+
+                int result = view.Refresh();
+                if (result < 0)
+                {
+                    Marshal.ThrowExceptionForHR(result);
+                }
+            }
+            finally
+            {
+                ComUtil.Release(viewObject);
+                if (viewPointer != IntPtr.Zero)
+                {
+                    Marshal.Release(viewPointer);
+                }
+            }
+        }
+
         internal bool TranslateAccelerator(ref Native.MSG msg)
         {
             if (_disposed || _browser == null)
