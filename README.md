@@ -1,12 +1,12 @@
-# QuadExplorer
+# SplitExplorer
 
 Windows 標準のフォルダビュー（IExplorerBrowser）を 2×2 の 4 ペインで表示する軽量アプリです。
 
 ## ビルドと起動
 
-1. `build.cmd` を実行すると `QuadExplorer.exe` ができます。
-2. `QuadExplorer.exe` をダブルクリックして起動します。追加ランタイムは不要です。
-3. 起動時に最大 4 つのパスを引数で渡せます（例: `QuadExplorer.exe C:\Windows D:\Work`）。
+1. `build.cmd` を実行すると `SplitExplorer.exe` ができます。
+2. `SplitExplorer.exe` をダブルクリックして起動します。追加ランタイムは不要です。
+3. 起動時に最大 4 つのパスを引数で渡せます（例: `SplitExplorer.exe C:\Windows D:\Work`）。
 
 ## 主な操作
 
@@ -15,4 +15,4 @@ Windows 標準のフォルダビュー（IExplorerBrowser）を 2×2 の 4 ペ�
 - `Ctrl+L` または `F6` でアドレスバーに移動します。
 - `Alt+1`〜`Alt+4` でペイン移動、`Alt+←` / `Alt+→` / `Alt+↑` で戻る・進む・上へ移動します。
 - 4つのペインは常に均等（1/4ずつ）に表示されます。
-- ウィンドウ位置・各ペインのタブは終了時に `QuadExplorer.state` に保存されます。
+- ウィンドウ位置・各ペインのタブは終了時に `SplitExplorer.state` に保存されます。

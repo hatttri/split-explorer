@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace QuadExplorer
+namespace SplitExplorer
 {
     #region ShellInterop
 

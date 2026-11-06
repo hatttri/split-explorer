@@ -6,13 +6,13 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 
-namespace QuadExplorer
+namespace SplitExplorer
 {
     #region StateStore
 
     internal static class StateStore
     {
-        private const string StateFileName = "QuadExplorer.state";
+        private const string StateFileName = "SplitExplorer.state";
         private const string FallbackFileName = "state.txt";
 
         internal static AppState Load()
@@ -296,7 +296,7 @@ namespace QuadExplorer
         private static string GetFallbackStatePath()
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(Path.Combine(appData, "QuadExplorer"), FallbackFileName);
+            return Path.Combine(Path.Combine(appData, "SplitExplorer"), FallbackFileName);
         }
 
         private static bool TryParseInt(string text, out int value)

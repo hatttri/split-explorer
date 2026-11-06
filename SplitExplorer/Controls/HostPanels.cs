@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace QuadExplorer
+namespace SplitExplorer
 {
     #region Host Controls
 

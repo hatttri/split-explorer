@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace QuadExplorer
+namespace SplitExplorer
 {
     #region MainForm
 
@@ -36,7 +36,7 @@ namespace QuadExplorer
             _state = state == null ? new AppState() : state;
             _initialArgs = initialArgs == null ? new string[0] : initialArgs;
 
-            Text = "QuadExplorer";
+            Text = "SplitExplorer";
             AutoScaleMode = AutoScaleMode.None;
             Font = SystemFonts.MessageBoxFont;
             DoubleBuffered = true;

@@ -1,11 +1,11 @@
 # ビルド生成物
-/QuadExplorer.exe
+/SplitExplorer.exe
 *.pdb
 *.mdb
 *.obj
 
 # 実行時の状態ファイル
-/QuadExplorer.state
+/SplitExplorer.state
 
 # Visual Studio / MSBuild
 .vs/
