@@ -36,6 +36,16 @@ namespace SplitExplorer
 
         public void InvalidateLayout()
         {
+            int rowHeight = Scale(38);
+            int tabArea = Math.Max(0, Height - Scale(34));
+            int selected = _pane.SelectedTabIndex;
+            if (selected >= 0 && tabArea > 0)
+            {
+                int top = selected * rowHeight;
+                int bottom = top + rowHeight;
+                if (top < _scrollOffset) _scrollOffset = top;
+                else if (bottom > _scrollOffset + tabArea) _scrollOffset = bottom - tabArea;
+            }
             _layoutDirty = true;
             Invalidate();
         }
@@ -67,103 +77,35 @@ namespace SplitExplorer
             return value < 1 ? 1 : value;
         }
 
+        private int _scrollOffset;
+
         private void EnsureLayout()
         {
             int count = _pane.TabCount;
-            if (!_layoutDirty &&
-                _tabBounds.Count == count)
-            {
-                return;
-            }
-
+            if (!_layoutDirty && _tabBounds.Count == count) return;
             _tabBounds.Clear();
             _closeBounds.Clear();
-
-            int plusWidth = Scale(24);
-            int tabArea = Width - plusWidth;
-            if (tabArea < 0)
-            {
-                tabArea = 0;
-            }
-            _plusBounds = new Rectangle(Width - plusWidth, 0, plusWidth, Height);
-
-            int minWidth = Scale(80);
-            int maxWidth = Scale(200);
+            int rowHeight = Scale(38);
+            int plusHeight = Scale(34);
+            int tabArea = Math.Max(0, Height - plusHeight);
+            _scrollOffset = Math.Max(0, Math.Min(_scrollOffset, Math.Max(0, count * rowHeight - tabArea)));
+            _plusBounds = new Rectangle(0, Height - plusHeight, Width, plusHeight);
             int closeWidth = Scale(18);
-            int padding = Scale(9);
-
-            List<int> widths = new List<int>();
-            int total = 0;
             for (int i = 0; i < count; i++)
             {
-                string title = _pane.GetTabTitle(i);
-                if (title == null)
-                {
-                    title = string.Empty;
-                }
-                Size textSize = TextRenderer.MeasureText(
-                    title,
-                    Font,
-                    new Size(int.MaxValue, int.MaxValue),
-                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
-                int desired = textSize.Width + padding * 2 + closeWidth;
-                if (desired < minWidth)
-                {
-                    desired = minWidth;
-                }
-                if (desired > maxWidth)
-                {
-                    desired = maxWidth;
-                }
-                widths.Add(desired);
-                total += desired;
-            }
-
-            int guard = 0;
-            while (total > tabArea && guard < 20000)
-            {
-                int widest = -1;
-                int widestValue = minWidth;
-                for (int i = 0; i < widths.Count; i++)
-                {
-                    if (widths[i] > widestValue)
-                    {
-                        widestValue = widths[i];
-                        widest = i;
-                    }
-                }
-                if (widest < 0)
-                {
-                    break;
-                }
-                widths[widest] = widths[widest] - 1;
-                total--;
-                guard++;
-            }
-
-            int x = 0;
-            for (int i = 0; i < widths.Count; i++)
-            {
-                Rectangle tabRect = new Rectangle(x, 0, widths[i], Height);
+                Rectangle tabRect = new Rectangle(0, i * rowHeight - _scrollOffset, Width, rowHeight);
                 _tabBounds.Add(tabRect);
-                _closeBounds.Add(new Rectangle(
-                    tabRect.Right - closeWidth - Scale(2),
-                    Scale(4),
-                    closeWidth,
-                    Math.Max(1, Height - Scale(8))));
-                x += widths[i];
+                _closeBounds.Add(new Rectangle(tabRect.Right - closeWidth - Scale(5), tabRect.Top + Scale(4), closeWidth, Math.Max(1, rowHeight - Scale(8))));
             }
-
             _layoutDirty = false;
         }
-
         private void HitTest(Point point, out int tabIndex, out bool onClose, out bool onPlus)
         {
             EnsureLayout();
             tabIndex = -1;
             onClose = false;
             onPlus = _plusBounds.Contains(point);
-            if (onPlus || point.X >= _plusBounds.Left)
+            if (onPlus)
             {
                 return;
             }
@@ -306,6 +248,13 @@ namespace SplitExplorer
             UpdateHover(e.Location);
         }
 
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            _scrollOffset = Math.Max(0, _scrollOffset - Math.Sign(e.Delta) * Scale(76));
+            _layoutDirty = true;
+            Invalidate();
+        }
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);

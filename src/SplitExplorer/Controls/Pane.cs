@@ -183,42 +183,38 @@ namespace SplitExplorer
             }
 
             int border = Scale(2);
-            int tabHeight = Scale(26);
-            int navHeight = Scale(28);
-            int buttonWidth = Scale(29);
+            int tabWidth = Math.Max(Scale(96), (int)Math.Round(ClientSize.Width * 0.15));
+            int navHeight = Scale(30);
+            int buttonWidth = Math.Max(Scale(24), (tabWidth - border * 2 - Scale(4)) / 3);
             int buttonGap = Scale(2);
             int inset = Scale(1);
 
-            int innerWidth = ClientSize.Width - border * 2;
+            int innerWidth = ClientSize.Width - tabWidth - border * 2;
             if (innerWidth < 1)
             {
                 innerWidth = 1;
             }
 
-            _tabStrip.SetBounds(border, border, innerWidth, tabHeight);
+            int sidebarX = border;
+            _backButton.SetBounds(sidebarX, border, buttonWidth, navHeight);
+            _forwardButton.SetBounds(sidebarX + buttonWidth + buttonGap, border, buttonWidth, navHeight);
+            _upButton.SetBounds(sidebarX + (buttonWidth + buttonGap) * 2, border, buttonWidth, navHeight);
+            int tabY = border + navHeight + buttonGap;
+            _tabStrip.SetBounds(sidebarX, tabY, tabWidth - border, Math.Max(1, ClientSize.Height - tabY - border));
 
-            int navY = border + tabHeight;
-            _backButton.SetBounds(border, navY, buttonWidth, navHeight);
-            _forwardButton.SetBounds(border + buttonWidth + buttonGap, navY, buttonWidth, navHeight);
-            _upButton.SetBounds(border + (buttonWidth + buttonGap) * 2, navY, buttonWidth, navHeight);
-
-            int addressX = border + (buttonWidth + buttonGap) * 3 + inset;
+            int addressX = border + tabWidth;
             int addressWidth = ClientSize.Width - addressX - border;
-            if (addressWidth < Scale(40))
-            {
-                addressWidth = Scale(40);
-            }
             int addressHeight = _addressBox.PreferredHeight;
-            int addressY = navY + Math.Max(0, (navHeight - addressHeight) / 2);
+            int addressY = border + Math.Max(0, (navHeight - addressHeight) / 2);
             _addressBox.SetBounds(addressX, addressY, addressWidth, addressHeight);
 
-            int viewY = navY + navHeight;
+            int viewY = border + navHeight + border;
             int viewHeight = ClientSize.Height - viewY - border;
             if (viewHeight < 1)
             {
                 viewHeight = 1;
             }
-            _viewHost.SetBounds(border, viewY, innerWidth, viewHeight);
+            _viewHost.SetBounds(addressX, viewY, innerWidth, viewHeight);
 
             Tab tab = ActiveTab;
             if (tab != null && tab.HostPanelControl != null)
