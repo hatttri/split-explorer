@@ -286,10 +286,6 @@ namespace SplitExplorer
             {
                 parsing = GetName(pidl, Native.SIGDN_FILESYSPATH);
             }
-            if (parsing.Length == 0)
-            {
-                parsing = GetName(pidl, Native.SIGDN_NORMALDISPLAY);
-            }
 
             string display = GetName(pidl, Native.SIGDN_NORMALDISPLAY);
             if (display.Length == 0)

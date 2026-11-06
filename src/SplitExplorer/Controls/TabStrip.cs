@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace SplitExplorer
@@ -9,6 +10,7 @@ namespace SplitExplorer
 
     internal sealed class TabStrip : Control
     {
+        private static readonly Font IconFont = SystemIconFont.Create(12f);
         private readonly Pane _pane;
         private readonly List<Rectangle> _tabBounds = new List<Rectangle>();
         private readonly List<Rectangle> _closeBounds = new List<Rectangle>();
@@ -30,8 +32,14 @@ namespace SplitExplorer
                 ControlStyles.ResizeRedraw,
                 true);
             DoubleBuffered = true;
-            BackColor = SystemColors.Control;
+            BackColor = UiTheme.SidebarBackground;
             TabStop = false;
+        }
+
+        internal void ApplyColors()
+        {
+            BackColor = UiTheme.SidebarBackground;
+            Invalidate();
         }
 
         public void InvalidateLayout()
@@ -125,43 +133,47 @@ namespace SplitExplorer
         {
             EnsureLayout();
             Graphics g = e.Graphics;
-            g.Clear(SystemColors.Control);
+            g.Clear(UiTheme.SidebarBackground);
 
             for (int i = 0; i < _tabBounds.Count; i++)
             {
-                Rectangle rect = _tabBounds[i];
+                Rectangle bounds = _tabBounds[i];
+                Rectangle rect = new Rectangle(bounds.X + Scale(3), bounds.Y + Scale(2),
+                    Math.Max(1, bounds.Width - Scale(6)), Math.Max(1, bounds.Height - Scale(4)));
                 bool selected = i == _pane.SelectedTabIndex;
                 bool hovered = i == _hoverTab;
 
-                Color backColor = selected ? Color.White : SystemColors.Control;
-                if (hovered && !selected)
+                Color backColor = selected ? UiTheme.Selected : (hovered ? UiTheme.Hover : UiTheme.SidebarBackground);
+
+                if (selected || hovered)
                 {
-                    backColor = SystemColors.ControlLight;
+                    using (GraphicsPath row = RoundedRectangle(rect, Scale(5)))
+                    using (SolidBrush brush = new SolidBrush(backColor))
+                    {
+                        g.FillPath(brush, row);
+                    }
                 }
 
-                using (SolidBrush brush = new SolidBrush(backColor))
+                if (selected)
                 {
-                    g.FillRectangle(brush, rect);
+                    using (SolidBrush accent = new SolidBrush(UiTheme.Accent))
+                    {
+                        g.FillRectangle(accent, rect.Left, rect.Top + Scale(7), Scale(2), Math.Max(1, rect.Height - Scale(14)));
+                    }
                 }
 
-                using (Pen border = new Pen(SystemColors.ControlDark))
-                {
-                    g.DrawLine(border, rect.Right - 1, rect.Top + Scale(4), rect.Right - 1, rect.Bottom - Scale(4));
-                }
-
-                int closeWidth = Scale(18);
                 Rectangle closeRect = _closeBounds[i];
                 Rectangle textRect = new Rectangle(
-                    rect.Left + Scale(9),
+                    rect.Left + Scale(10),
                     rect.Top,
-                    Math.Max(1, closeRect.Left - rect.Left - Scale(12)),
+                    Math.Max(1, closeRect.Left - rect.Left - Scale(13)),
                     rect.Height);
                 TextRenderer.DrawText(
                     g,
                     _pane.GetTabTitle(i),
                     Font,
                     textRect,
-                    selected ? SystemColors.ControlText : SystemColors.GrayText,
+                    selected ? UiTheme.Text : UiTheme.MutedText,
                     TextFormatFlags.Left |
                     TextFormatFlags.VerticalCenter |
                     TextFormatFlags.EndEllipsis |
@@ -171,55 +183,60 @@ namespace SplitExplorer
                 bool closeHovered = hovered && _hoverClose;
                 if (closeHovered)
                 {
-                    using (SolidBrush brush = new SolidBrush(Color.FromArgb(232, 17, 35)))
+                    using (GraphicsPath closeFace = RoundedRectangle(closeRect, Scale(4)))
+                    using (SolidBrush brush = new SolidBrush(UiTheme.Hover))
                     {
-                        g.FillRectangle(brush, closeRect);
+                        g.FillPath(brush, closeFace);
                     }
                 }
 
-                int cx = closeRect.Left + closeRect.Width / 2;
-                int cy = closeRect.Top + closeRect.Height / 2;
-                int arm = Scale(3);
-                Color closeColor = closeHovered ? Color.White : SystemColors.GrayText;
-                using (Pen pen = new Pen(closeColor, Math.Max(1f, Scale(1))))
+                if (selected || hovered)
                 {
-                    g.DrawLine(pen, cx - arm, cy - arm, cx + arm, cy + arm);
-                    g.DrawLine(pen, cx - arm, cy + arm, cx + arm, cy - arm);
-                }
-
-                if (selected)
-                {
-                    using (Pen pen = new Pen(Color.White, 2f))
-                    {
-                        g.DrawLine(pen, rect.Left + 1, rect.Bottom - 1, rect.Right - 2, rect.Bottom - 1);
-                    }
+                    Color closeColor = closeHovered ? UiTheme.Text : UiTheme.MutedText;
+                    DrawSystemGlyph(g, '\uE8BB', closeRect, closeColor);
                 }
             }
 
             bool plusHovered = _hoverPlus;
             if (plusHovered)
             {
-                using (SolidBrush brush = new SolidBrush(SystemColors.ControlLight))
+                using (SolidBrush brush = new SolidBrush(UiTheme.Hover))
                 {
                     g.FillRectangle(brush, _plusBounds);
                 }
             }
 
-            TextRenderer.DrawText(
-                g,
-                "+",
-                Font,
-                _plusBounds,
-                plusHovered ? SystemColors.ControlText : SystemColors.GrayText,
-                TextFormatFlags.HorizontalCenter |
-                TextFormatFlags.VerticalCenter |
-                TextFormatFlags.NoPrefix |
-                TextFormatFlags.SingleLine);
+            int plusCenterX = _plusBounds.Left + Scale(22);
+            int plusCenterY = _plusBounds.Top + _plusBounds.Height / 2;
+            DrawSystemGlyph(g, '\uE710', new Rectangle(plusCenterX - Scale(9), plusCenterY - Scale(9), Scale(18), Scale(18)),
+                plusHovered ? UiTheme.Text : UiTheme.MutedText);
+            TextRenderer.DrawText(g, "新しいタブ", Font,
+                new Rectangle(_plusBounds.Left + Scale(38), _plusBounds.Top, Math.Max(1, Width - Scale(42)), _plusBounds.Height),
+                UiTheme.Text, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine);
 
-            using (Pen bottom = new Pen(SystemColors.ControlDark))
+            using (Pen bottom = new Pen(UiTheme.Border))
             {
                 g.DrawLine(bottom, 0, Height - 1, Width, Height - 1);
             }
+        }
+
+        private static void DrawSystemGlyph(Graphics graphics, char glyph, Rectangle bounds, Color color)
+        {
+            TextRenderer.DrawText(graphics, glyph.ToString(), IconFont, bounds, color,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine);
+        }
+
+        private static GraphicsPath RoundedRectangle(Rectangle bounds, int radius)
+        {
+            int diameter = Math.Max(2, radius * 2);
+            GraphicsPath path = new GraphicsPath();
+            path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private void UpdateHover(Point point)

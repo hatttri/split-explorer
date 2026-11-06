@@ -176,7 +176,21 @@ namespace SplitExplorer
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+            ApplyColors();
             LayoutAll();
+        }
+
+        private void ApplyColors()
+        {
+            BackColor = UiTheme.PaneBackground;
+            ForeColor = UiTheme.Text;
+            for (int i = 0; i < _panes.Length; i++)
+            {
+                if (_panes[i] != null)
+                {
+                    _panes[i].ApplyColors();
+                }
+            }
         }
 
         protected override void OnShown(EventArgs e)

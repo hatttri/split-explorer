@@ -14,12 +14,16 @@ namespace SplitExplorer
         private readonly MainForm _main;
         private readonly int _index;
         private readonly TabStrip _tabStrip;
-        private readonly Button _backButton;
-        private readonly Button _forwardButton;
-        private readonly Button _upButton;
-        private readonly Button _refreshButton;
+        private readonly NavigationButton _backButton;
+        private readonly NavigationButton _forwardButton;
+        private readonly NavigationButton _upButton;
+        private readonly NavigationButton _refreshButton;
+        private readonly AddressBarFrame _addressFrame;
+        private readonly BreadcrumbBar _breadcrumbBar;
         private readonly TextBox _addressBox;
+        private readonly Button _addressModeButton;
         private readonly ViewPanel _viewHost;
+        private readonly ToolTip _navigationToolTip;
         private readonly List<Tab> _tabs = new List<Tab>();
         private readonly List<string> _recentlyClosed = new List<string>();
         private readonly Timer _addressFlashTimer;
@@ -43,23 +47,58 @@ namespace SplitExplorer
                 ControlStyles.ResizeRedraw,
                 true);
             DoubleBuffered = true;
-            BackColor = SystemColors.Control;
+            BackColor = UiTheme.PaneBackground;
             Font = SystemFonts.MessageBoxFont;
 
             _tabStrip = new TabStrip(this);
             _tabStrip.Font = SystemFonts.MessageBoxFont;
 
-            _backButton = CreateNavButton("\u25C0");
-            _forwardButton = CreateNavButton("\u25B6");
-            _upButton = CreateNavButton("\u25B2");
-            _refreshButton = CreateNavButton("\u21BB");
-            _refreshButton.AccessibleName = "最新の状態へ更新";
+            _backButton = CreateNavButton(NavigationGlyph.Back, "戻る");
+            _forwardButton = CreateNavButton(NavigationGlyph.Forward, "進む");
+            _upButton = CreateNavButton(NavigationGlyph.Parent, "親フォルダー");
+            _refreshButton = CreateNavButton(NavigationGlyph.Refresh, "最新の状態へ更新");
             _refreshButton.Click += delegate { RefreshActiveTab(); };
+            _navigationToolTip = new ToolTip();
+            _navigationToolTip.SetToolTip(_backButton, "戻る");
+            _navigationToolTip.SetToolTip(_forwardButton, "進む");
+            _navigationToolTip.SetToolTip(_upButton, "親フォルダー");
+            _navigationToolTip.SetToolTip(_refreshButton, "最新の状態へ更新");
 
+            _addressFrame = new AddressBarFrame();
+            _breadcrumbBar = new BreadcrumbBar();
             _addressBox = new TextBox();
-            _addressBox.BorderStyle = BorderStyle.FixedSingle;
+            _addressModeButton = new Button();
+            _addressBox.BorderStyle = BorderStyle.None;
             _addressBox.Font = SystemFonts.MessageBoxFont;
-            _addressBox.BackColor = SystemColors.Window;
+            _addressBox.BackColor = UiTheme.Surface;
+            _addressBox.ForeColor = UiTheme.Text;
+            _addressBox.Visible = false;
+            _breadcrumbBar.Visible = true;
+            _addressModeButton.Text = "\uE711";
+            _addressModeButton.Font = SystemIconFont.Create(10f);
+            _addressModeButton.ForeColor = UiTheme.MutedText;
+            _addressModeButton.BackColor = UiTheme.Surface;
+            _addressModeButton.FlatStyle = FlatStyle.Flat;
+            _addressModeButton.FlatAppearance.BorderSize = 0;
+            _addressModeButton.TabStop = true;
+            _addressModeButton.AccessibleName = "パンくず表示に戻る";
+            _addressModeButton.Visible = false;
+            _navigationToolTip.SetToolTip(_addressModeButton, "入力を破棄して階層表示に戻る");
+            _addressFrame.Controls.Add(_breadcrumbBar);
+            _addressFrame.Controls.Add(_addressBox);
+            _addressFrame.Controls.Add(_addressModeButton);
+            _addressBox.Enter += delegate { _addressFrame.Invalidate(); };
+            _addressBox.Leave += delegate
+            {
+                _addressFrame.Invalidate();
+                if (!_addressModeButton.Focused)
+                {
+                    ShowBreadcrumbBar();
+                }
+            };
+            _breadcrumbBar.SegmentClicked += NavigateToBreadcrumb;
+            _breadcrumbBar.EditRequested += FocusAddressBar;
+            _addressModeButton.Click += delegate { CancelAddressEditing(); };
 
             _viewHost = new ViewPanel();
 
@@ -74,14 +113,14 @@ namespace SplitExplorer
             Controls.Add(_forwardButton);
             Controls.Add(_upButton);
             Controls.Add(_refreshButton);
-            Controls.Add(_addressBox);
+            Controls.Add(_addressFrame);
 
             _addressFlashTimer = new Timer();
             _addressFlashTimer.Interval = 1200;
             _addressFlashTimer.Tick += delegate
             {
                 _addressFlashTimer.Stop();
-                _addressBox.BackColor = SystemColors.Window;
+                _addressBox.BackColor = UiTheme.Surface;
             };
 
             _layoutReady = true;
@@ -119,17 +158,9 @@ namespace SplitExplorer
             get { return _active; }
         }
 
-        private Button CreateNavButton(string text)
+        private NavigationButton CreateNavButton(NavigationGlyph glyph, string accessibleName)
         {
-            Button button = new Button();
-            button.Text = text;
-            button.FlatStyle = FlatStyle.Flat;
-            button.FlatAppearance.BorderSize = 0;
-            button.UseVisualStyleBackColor = false;
-            button.BackColor = SystemColors.Control;
-            button.TabStop = false;
-            button.Font = SystemFonts.MessageBoxFont;
-            return button;
+            return new NavigationButton(glyph, accessibleName);
         }
 
         protected override CreateParams CreateParams
@@ -150,7 +181,7 @@ namespace SplitExplorer
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            e.Graphics.Clear(SystemColors.Control);
+            e.Graphics.Clear(UiTheme.PaneBackground);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -158,7 +189,7 @@ namespace SplitExplorer
             base.OnPaint(e);
 
             int thickness = 1;
-            Color color = SystemColors.ControlDark;
+            Color color = UiTheme.Border;
             using (SolidBrush brush = new SolidBrush(color))
             {
                 e.Graphics.FillRectangle(brush, 0, 0, Width, thickness);
@@ -190,10 +221,9 @@ namespace SplitExplorer
             int border = Scale(2);
             int tabWidth = Math.Max(Scale(96), (int)Math.Round(ClientSize.Width * 0.15));
             int navHeight = Scale(30);
-            int buttonWidth = Math.Max(Scale(18), (tabWidth - border * 2 - Scale(6)) / 4);
-            int buttonGap = Scale(2);
-            int inset = Scale(1);
-
+            int navWidth = Math.Max(1, tabWidth - border * 2);
+            int navSlotWidth = Math.Max(1, navWidth / 4);
+            int buttonSize = Math.Min(navHeight, navSlotWidth);
             int innerWidth = ClientSize.Width - tabWidth - border * 2;
             if (innerWidth < 1)
             {
@@ -201,18 +231,30 @@ namespace SplitExplorer
             }
 
             int sidebarX = border;
-            _backButton.SetBounds(sidebarX, border, buttonWidth, navHeight);
-            _forwardButton.SetBounds(sidebarX + buttonWidth + buttonGap, border, buttonWidth, navHeight);
-            _upButton.SetBounds(sidebarX + (buttonWidth + buttonGap) * 2, border, buttonWidth, navHeight);
-            _refreshButton.SetBounds(sidebarX + (buttonWidth + buttonGap) * 3, border, buttonWidth, navHeight);
-            int tabY = border + navHeight + buttonGap;
+            NavigationButton[] navigationButtons = { _backButton, _forwardButton, _upButton, _refreshButton };
+            for (int i = 0; i < navigationButtons.Length; i++)
+            {
+                int slotLeft = sidebarX + i * navWidth / navigationButtons.Length;
+                int slotRight = sidebarX + (i + 1) * navWidth / navigationButtons.Length;
+                int buttonX = slotLeft + (slotRight - slotLeft - buttonSize) / 2;
+                navigationButtons[i].SetBounds(buttonX, border, buttonSize, navHeight);
+            }
+            int tabY = border + navHeight + Scale(2);
             _tabStrip.SetBounds(sidebarX, tabY, tabWidth - border, Math.Max(1, ClientSize.Height - tabY - border));
 
             int addressX = border + tabWidth;
             int addressWidth = ClientSize.Width - addressX - border;
             int addressHeight = _addressBox.PreferredHeight;
-            int addressY = border + Math.Max(0, (navHeight - addressHeight) / 2);
-            _addressBox.SetBounds(addressX, addressY, addressWidth, addressHeight);
+            int addressFrameHeight = Math.Max(addressHeight, navHeight - Scale(2));
+            int addressY = border + Math.Max(0, (navHeight - addressFrameHeight) / 2);
+            _addressFrame.SetBounds(addressX, addressY, addressWidth, addressFrameHeight);
+            Rectangle addressContent = new Rectangle(_addressFrame.Padding.Left, Math.Max(0, (addressFrameHeight - addressHeight) / 2),
+                Math.Max(1, addressWidth - _addressFrame.Padding.Horizontal - Scale(25)), addressHeight);
+            _addressBox.Bounds = addressContent;
+            _breadcrumbBar.SetBounds(_addressFrame.Padding.Left, 0,
+                Math.Max(1, addressWidth - _addressFrame.Padding.Horizontal), addressFrameHeight);
+            _addressModeButton.SetBounds(addressWidth - _addressFrame.Padding.Right - Scale(23),
+                Math.Max(0, (addressFrameHeight - Scale(23)) / 2), Scale(23), Scale(23));
 
             int viewY = border + navHeight + border;
             int viewHeight = ClientSize.Height - viewY - border;
@@ -245,6 +287,18 @@ namespace SplitExplorer
             Invalidate();
         }
 
+        internal void ApplyColors()
+        {
+            BackColor = UiTheme.PaneBackground;
+            ForeColor = UiTheme.Text;
+            _addressBox.BackColor = UiTheme.Surface;
+            _addressBox.ForeColor = UiTheme.Text;
+            _addressFrame.ApplyColors();
+            _tabStrip.ApplyColors();
+            _viewHost.Invalidate(true);
+            Invalidate(true);
+        }
+
         internal bool ContainsViewFocus(IntPtr focus)
         {
             if (focus == IntPtr.Zero || !_viewHost.IsHandleCreated)
@@ -267,7 +321,7 @@ namespace SplitExplorer
             Tab tab = ActiveTab;
             if (tab == null || tab.HostPanelControl == null)
             {
-                _addressBox.Focus();
+                FocusAddressBar();
                 return;
             }
 
@@ -285,15 +339,51 @@ namespace SplitExplorer
             IntPtr focused = Native.GetFocus();
             if (focused == IntPtr.Zero || !Native.IsChild(tab.HostPanelControl.Handle, focused))
             {
-                _addressBox.Focus();
-                _addressBox.SelectAll();
+                FocusAddressBar();
             }
         }
 
         internal void FocusAddressBar()
         {
+            ActivatePane();
+            Tab tab = ActiveTab;
+            _addressBox.Text = tab == null ? string.Empty : tab.CurrentAddress;
+            _breadcrumbBar.Visible = false;
+            _addressBox.Visible = true;
+            _addressModeButton.Visible = true;
+            _addressBox.BringToFront();
             _addressBox.Focus();
             _addressBox.SelectAll();
+        }
+
+        private void ShowBreadcrumbBar()
+        {
+            Tab tab = ActiveTab;
+            _breadcrumbBar.SetPath(tab == null ? string.Empty : tab.CurrentAddress);
+            _addressBox.Visible = false;
+            _addressModeButton.Visible = false;
+            _breadcrumbBar.Visible = true;
+            _breadcrumbBar.BringToFront();
+        }
+
+        private void CancelAddressEditing()
+        {
+            Tab tab = ActiveTab;
+            _addressBox.Text = tab == null ? string.Empty : tab.CurrentAddress;
+            _addressBox.BackColor = UiTheme.Surface;
+            _addressFlashTimer.Stop();
+            ShowBreadcrumbBar();
+        }
+
+        private void NavigateToBreadcrumb(string path)
+        {
+            ActivatePane();
+            Tab tab = ActiveTab;
+            if (tab != null && !string.IsNullOrEmpty(path))
+            {
+                tab.NavigateTo(path);
+                UpdateNavButtons();
+            }
         }
 
         internal bool TranslateViewAccelerator(IntPtr hwnd, ref Native.MSG msg)
@@ -389,6 +479,7 @@ namespace SplitExplorer
             if (tab != null)
             {
                 _addressBox.Text = tab.CurrentAddress;
+                _breadcrumbBar.SetPath(tab.CurrentAddress);
             }
             UpdateNavButtons();
         }
@@ -622,11 +713,12 @@ namespace SplitExplorer
 
             if (index == _selectedIndex)
             {
+                _breadcrumbBar.SetPath(tab.CurrentAddress);
                 if (!_addressBox.Focused)
                 {
                     _addressBox.Text = tab.CurrentAddress;
                 }
-                _addressBox.BackColor = SystemColors.Window;
+                _addressBox.BackColor = UiTheme.Surface;
                 _addressFlashTimer.Stop();
                 UpdateNavButtons();
             }
@@ -643,6 +735,7 @@ namespace SplitExplorer
             if (tab == ActiveTab)
             {
                 _addressBox.Text = tab.CurrentAddress;
+                _breadcrumbBar.SetPath(tab.CurrentAddress);
                 UpdateNavButtons();
                 FlashAddress(Color.MistyRose);
             }
@@ -682,14 +775,13 @@ namespace SplitExplorer
                 input = Environment.ExpandEnvironmentVariables(input);
                 tab.NavigateTo(input);
                 UpdateNavButtons();
+                ShowBreadcrumbBar();
             }
             else if (e.KeyCode == Keys.Escape)
             {
                 e.SuppressKeyPress = true;
                 e.Handled = true;
-                _addressBox.Text = tab.CurrentAddress;
-                _addressBox.BackColor = SystemColors.Window;
-                _addressFlashTimer.Stop();
+                CancelAddressEditing();
             }
         }
 
@@ -716,6 +808,7 @@ namespace SplitExplorer
             {
                 Shutdown();
                 _addressFlashTimer.Dispose();
+                _navigationToolTip.Dispose();
             }
             base.Dispose(disposing);
         }

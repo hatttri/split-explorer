@@ -16,7 +16,7 @@ namespace SplitExplorer
                 ControlStyles.ResizeRedraw,
                 true);
             DoubleBuffered = true;
-            BackColor = SystemColors.Window;
+            BackColor = UiTheme.Surface;
             TabStop = false;
         }
 
@@ -26,7 +26,7 @@ namespace SplitExplorer
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.Clear(SystemColors.Window);
+            e.Graphics.Clear(UiTheme.Surface);
         }
 
         protected override CreateParams CreateParams
@@ -51,7 +51,7 @@ namespace SplitExplorer
                 ControlStyles.ResizeRedraw,
                 true);
             DoubleBuffered = true;
-            BackColor = SystemColors.Window;
+            BackColor = UiTheme.Surface;
             TabStop = false;
         }
 
@@ -61,7 +61,7 @@ namespace SplitExplorer
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.Clear(SystemColors.Window);
+            e.Graphics.Clear(UiTheme.Surface);
         }
 
         protected override CreateParams CreateParams
