@@ -1,0 +1,21 @@
+# ビルド生成物
+/QuadExplorer.exe
+*.pdb
+*.mdb
+*.obj
+
+# 実行時の状態ファイル
+/QuadExplorer.state
+
+# Visual Studio / MSBuild
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+
+# OS が生成するファイル
+Thumbs.db
+Desktop.ini
+.DS_Store
