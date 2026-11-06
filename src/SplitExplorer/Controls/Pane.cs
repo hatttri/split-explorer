@@ -152,8 +152,8 @@ namespace SplitExplorer
         {
             base.OnPaint(e);
 
-            int thickness = _active ? Scale(2) : 1;
-            Color color = _active ? SystemColors.Highlight : SystemColors.ControlDark;
+            int thickness = 1;
+            Color color = SystemColors.ControlDark;
             using (SolidBrush brush = new SolidBrush(color))
             {
                 e.Graphics.FillRectangle(brush, 0, 0, Width, thickness);
