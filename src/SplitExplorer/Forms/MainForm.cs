@@ -72,16 +72,14 @@ namespace SplitExplorer
             {
                 StartPosition = FormStartPosition.Manual;
                 Bounds = state.Window;
-                if (state.Maximized)
-                {
-                    WindowState = FormWindowState.Maximized;
-                }
             }
             else
             {
                 StartPosition = FormStartPosition.CenterScreen;
                 Size = new Size(1600, 900);
             }
+
+            WindowState = FormWindowState.Maximized;
         }
 
         private static bool IsUsableBounds(Rectangle bounds)
