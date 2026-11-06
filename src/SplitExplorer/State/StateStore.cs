@@ -13,27 +13,22 @@ namespace SplitExplorer
     internal static class StateStore
     {
         private const string StateFileName = "SplitExplorer.state";
-        private const string FallbackFileName = "state.txt";
 
         internal static AppState Load()
         {
             AppState state = new AppState();
             string text = null;
 
-            string[] candidates = new string[] { GetPrimaryStatePath(), GetFallbackStatePath() };
-            for (int i = 0; i < candidates.Length; i++)
+            try
             {
-                try
+                string path = GetPrimaryStatePath();
+                if (path != null && File.Exists(path))
                 {
-                    if (File.Exists(candidates[i]))
-                    {
-                        text = File.ReadAllText(candidates[i], Encoding.UTF8);
-                        break;
-                    }
+                    text = File.ReadAllText(path, Encoding.UTF8);
                 }
-                catch (Exception)
-                {
-                }
+            }
+            catch (Exception)
+            {
             }
 
             if (!string.IsNullOrEmpty(text))
@@ -207,25 +202,15 @@ namespace SplitExplorer
             }
 
             string content = builder.ToString();
-            string primary = GetPrimaryStatePath();
-            try
+            string statePath = GetPrimaryStatePath();
+            if (statePath == null)
             {
-                File.WriteAllText(primary, content, new UTF8Encoding(false));
                 return;
-            }
-            catch (Exception)
-            {
             }
 
             try
             {
-                string fallback = GetFallbackStatePath();
-                string directory = Path.GetDirectoryName(fallback);
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-                File.WriteAllText(fallback, content, new UTF8Encoding(false));
+                File.WriteAllText(statePath, content, new UTF8Encoding(false));
             }
             catch (Exception)
             {
@@ -288,15 +273,9 @@ namespace SplitExplorer
             string directory = Path.GetDirectoryName(Application.ExecutablePath);
             if (string.IsNullOrEmpty(directory))
             {
-                directory = Environment.CurrentDirectory;
+                return null;
             }
             return Path.Combine(directory, StateFileName);
-        }
-
-        private static string GetFallbackStatePath()
-        {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(Path.Combine(appData, "SplitExplorer"), FallbackFileName);
         }
 
         private static bool TryParseInt(string text, out int value)
