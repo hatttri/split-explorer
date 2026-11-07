@@ -489,7 +489,7 @@ namespace SplitExplorer
             Tab tab = ActiveTab;
             _backButton.Enabled = tab != null && tab.CanGoBack;
             _forwardButton.Enabled = tab != null && tab.CanGoForward;
-            _upButton.Enabled = tab != null;
+            _upButton.Enabled = tab != null && tab.CanGoUp;
             _refreshButton.Enabled = tab != null;
         }
 

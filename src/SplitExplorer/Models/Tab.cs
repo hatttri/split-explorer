@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 namespace SplitExplorer
@@ -73,6 +74,22 @@ namespace SplitExplorer
         internal bool CanGoForward
         {
             get { return _historyIndex >= 0 && _historyIndex < _history.Count - 1; }
+        }
+
+        internal bool CanGoUp
+        {
+            get
+            {
+                if (_disposed || _host == null)
+                {
+                    return false;
+                }
+
+                string fileSystemPath = _host.CurrentFileSysPath;
+                return IsFullyQualifiedFileSystemPath(fileSystemPath)
+                    ? GetFileSystemParentPath(fileSystemPath) != null
+                    : _host.CurrentParsingName.Length > 0;
+            }
         }
 
         internal void SetHostBounds(Rectangle bounds)
@@ -276,11 +293,91 @@ namespace SplitExplorer
             _historyRevertIndex = -1;
             try
             {
+                string fileSystemPath = _host.CurrentFileSysPath;
+                if (IsFullyQualifiedFileSystemPath(fileSystemPath))
+                {
+                    string parentPath = GetFileSystemParentPath(fileSystemPath);
+                    if (parentPath != null)
+                    {
+                        NavigateInternal(parentPath);
+                    }
+                    return;
+                }
+
                 _host.NavigateToParent();
             }
             catch (Exception)
             {
                 HandleNavigationFailure();
+            }
+        }
+
+        private static bool IsFullyQualifiedFileSystemPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                string root = Path.GetPathRoot(path);
+                if (string.IsNullOrEmpty(root))
+                {
+                    return false;
+                }
+
+                if (root.Length >= 3 && char.IsLetter(root[0]) && root[1] == ':'
+                    && (root[2] == '\\' || root[2] == '/'))
+                {
+                    return true;
+                }
+
+                if (root.StartsWith("\\\\", StringComparison.Ordinal))
+                {
+                    string[] parts = root.Trim('\\', '/').Split('\\', '/');
+                    return parts.Length >= 2 && parts[0].Length > 0 && parts[1].Length > 0;
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return false;
+        }
+
+        private static string GetFileSystemParentPath(string path)
+        {
+            if (!IsFullyQualifiedFileSystemPath(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                string fullPath = Path.GetFullPath(path);
+                string root = Path.GetPathRoot(fullPath);
+                if (string.IsNullOrEmpty(root))
+                {
+                    return null;
+                }
+
+                string normalizedPath = fullPath.TrimEnd('\\', '/');
+                string normalizedRoot = root.TrimEnd('\\', '/');
+                if (string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                string parent = Path.GetDirectoryName(fullPath);
+                return string.IsNullOrEmpty(parent)
+                    || string.Equals(parent, fullPath, StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : parent;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 
