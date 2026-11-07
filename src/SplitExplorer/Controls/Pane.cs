@@ -24,7 +24,6 @@ namespace SplitExplorer
         private readonly ToolTip _navigationToolTip;
         private readonly List<Tab> _tabs = new List<Tab>();
         private readonly List<string> _recentlyClosed = new List<string>();
-        private readonly Timer _addressFlashTimer;
 
         private int _selectedIndex = -1;
         private bool _active;
@@ -112,14 +111,6 @@ namespace SplitExplorer
             Controls.Add(_upButton);
             Controls.Add(_refreshButton);
             Controls.Add(_addressFrame);
-
-            _addressFlashTimer = new Timer();
-            _addressFlashTimer.Interval = 1200;
-            _addressFlashTimer.Tick += delegate
-            {
-                _addressFlashTimer.Stop();
-                _addressBox.BackColor = UiTheme.Surface;
-            };
 
             _layoutReady = true;
         }
@@ -368,8 +359,6 @@ namespace SplitExplorer
         {
             Tab tab = ActiveTab;
             _addressBox.Text = tab == null ? string.Empty : tab.CurrentAddress;
-            _addressBox.BackColor = UiTheme.Surface;
-            _addressFlashTimer.Stop();
             ShowBreadcrumbBar();
         }
 
@@ -495,7 +484,6 @@ namespace SplitExplorer
         {
             if (_tabs.Count >= MaxTabs)
             {
-                FlashAddress(Color.FromArgb(255, 238, 180));
                 return;
             }
 
@@ -716,8 +704,6 @@ namespace SplitExplorer
                 {
                     _addressBox.Text = tab.CurrentAddress;
                 }
-                _addressBox.BackColor = UiTheme.Surface;
-                _addressFlashTimer.Stop();
                 UpdateNavButtons();
             }
             _tabStrip.InvalidateLayout();
@@ -735,16 +721,8 @@ namespace SplitExplorer
                 _addressBox.Text = tab.CurrentAddress;
                 _breadcrumbBar.SetPath(tab.CurrentAddress);
                 UpdateNavButtons();
-                FlashAddress(Color.MistyRose);
             }
             _tabStrip.InvalidateLayout();
-        }
-
-        private void FlashAddress(Color color)
-        {
-            _addressBox.BackColor = color;
-            _addressFlashTimer.Stop();
-            _addressFlashTimer.Start();
         }
 
         private void AddressBoxKeyDown(object sender, KeyEventArgs e)
@@ -791,7 +769,6 @@ namespace SplitExplorer
             }
             _shutDown = true;
 
-            _addressFlashTimer.Stop();
             for (int i = _tabs.Count - 1; i >= 0; i--)
             {
                 _tabs[i].Dispose();
@@ -805,7 +782,6 @@ namespace SplitExplorer
             if (disposing)
             {
                 Shutdown();
-                _addressFlashTimer.Dispose();
                 _navigationToolTip.Dispose();
             }
             base.Dispose(disposing);
