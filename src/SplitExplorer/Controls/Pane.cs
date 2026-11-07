@@ -23,7 +23,6 @@ namespace SplitExplorer
         private readonly ViewPanel _viewHost;
         private readonly ToolTip _navigationToolTip;
         private readonly List<Tab> _tabs = new List<Tab>();
-        private readonly List<string> _recentlyClosed = new List<string>();
 
         private int _selectedIndex = -1;
         private bool _active;
@@ -551,14 +550,6 @@ namespace SplitExplorer
             return tab;
         }
 
-        internal void CloseActiveTab()
-        {
-            if (_tabs.Count > 1 && _selectedIndex >= 0)
-            {
-                CloseTab(_selectedIndex);
-            }
-        }
-
         internal void CloseTab(int index)
         {
             if (index < 0 || index >= _tabs.Count || _tabs.Count <= 1)
@@ -567,15 +558,6 @@ namespace SplitExplorer
             }
 
             Tab closing = _tabs[index];
-            string closedPath = closing.CurrentParsingName;
-            if (closedPath.Length > 0)
-            {
-                if (_recentlyClosed.Count >= 10)
-                {
-                    _recentlyClosed.RemoveAt(0);
-                }
-                _recentlyClosed.Add(closedPath);
-            }
 
             bool wasSelected = index == _selectedIndex;
             if (closing.HostPanelControl != null)
@@ -613,35 +595,6 @@ namespace SplitExplorer
             else
             {
                 UpdateAddressAndNav();
-            }
-        }
-
-        internal void CycleTab(int direction)
-        {
-            if (_tabs.Count <= 1)
-            {
-                return;
-            }
-            int count = _tabs.Count;
-            int index = (_selectedIndex + direction) % count;
-            if (index < 0)
-            {
-                index += count;
-            }
-            SelectTab(index);
-        }
-
-        internal void RestoreClosedTab()
-        {
-            if (_recentlyClosed.Count == 0 || _tabs.Count >= MaxTabs)
-            {
-                return;
-            }
-            string path = _recentlyClosed[_recentlyClosed.Count - 1];
-            _recentlyClosed.RemoveAt(_recentlyClosed.Count - 1);
-            if (AddTab(path, true) != null)
-            {
-                FocusView();
             }
         }
 

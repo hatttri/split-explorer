@@ -366,34 +366,21 @@ namespace SplitExplorer
                     return false;
                 }
 
-                bool keyDown = m.Msg == Native.WM_KEYDOWN || m.Msg == Native.WM_SYSKEYDOWN;
                 bool keyMessage = m.Msg >= Native.WM_KEYFIRST && m.Msg <= Native.WM_KEYLAST;
-                if (keyDown || keyMessage)
+                if (keyMessage)
                 {
                     if (!IsWindowOfThisForm(m.HWnd))
                     {
                         return false;
                     }
 
-                    if (keyDown)
+                    Pane pane = FindPaneForWindow(m.HWnd);
+                    if (pane != null)
                     {
-                        Keys key = (Keys)(int)m.WParam;
-                        if (HandleShortcut(key))
+                        Native.MSG msg = Native.MSG.FromMessage(m);
+                        if (pane.TranslateViewAccelerator(m.HWnd, ref msg))
                         {
                             return true;
-                        }
-                    }
-
-                    if (keyMessage)
-                    {
-                        Pane pane = FindPaneForWindow(m.HWnd);
-                        if (pane != null)
-                        {
-                            Native.MSG msg = Native.MSG.FromMessage(m);
-                            if (pane.TranslateViewAccelerator(m.HWnd, ref msg))
-                            {
-                                return true;
-                            }
                         }
                     }
                 }
@@ -401,80 +388,6 @@ namespace SplitExplorer
             catch (Exception)
             {
             }
-            return false;
-        }
-
-        private bool HandleShortcut(Keys key)
-        {
-            Pane pane = _activePane;
-            if (pane == null)
-            {
-                return false;
-            }
-
-            Keys modifiers = Control.ModifierKeys;
-            bool control = (modifiers & Keys.Control) != 0;
-            bool shift = (modifiers & Keys.Shift) != 0;
-            bool alt = (modifiers & Keys.Alt) != 0;
-
-            if (control && !alt)
-            {
-                if (key == Keys.Tab)
-                {
-                    pane.CycleTab(shift ? -1 : 1);
-                    return true;
-                }
-                if (!shift && key == Keys.T)
-                {
-                    pane.NewTab();
-                    return true;
-                }
-                if (!shift && key == Keys.W)
-                {
-                    pane.CloseActiveTab();
-                    return true;
-                }
-                if (shift && key == Keys.T)
-                {
-                    pane.RestoreClosedTab();
-                    return true;
-                }
-                if (!shift && key == Keys.L)
-                {
-                    pane.FocusAddressBar();
-                    return true;
-                }
-            }
-
-            if (alt && !control && !shift)
-            {
-                if (key >= Keys.D1 && key <= Keys.D4)
-                {
-                    int index = (int)key - (int)Keys.D1;
-                    if (index >= 0 && index < 4)
-                    {
-                        SetActivePane(_panes[index]);
-                        _panes[index].FocusView();
-                        return true;
-                    }
-                }
-                if (key == Keys.Left)
-                {
-                    pane.GoBack();
-                    return true;
-                }
-                if (key == Keys.Right)
-                {
-                    pane.GoForward();
-                    return true;
-                }
-                if (key == Keys.Up)
-                {
-                    pane.GoUp();
-                    return true;
-                }
-            }
-
             return false;
         }
 
