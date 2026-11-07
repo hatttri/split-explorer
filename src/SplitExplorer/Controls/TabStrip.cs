@@ -285,7 +285,7 @@ namespace SplitExplorer
             base.OnMouseDown(e);
             _pane.ActivatePane();
 
-            if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Middle)
+            if (e.Button != MouseButtons.Left)
             {
                 return;
             }
@@ -294,15 +294,6 @@ namespace SplitExplorer
             bool onClose;
             bool onPlus;
             HitTest(e.Location, out tabIndex, out onClose, out onPlus);
-
-            if (e.Button == MouseButtons.Middle)
-            {
-                if (tabIndex >= 0)
-                {
-                    _pane.CloseTab(tabIndex);
-                }
-                return;
-            }
 
             if (onPlus)
             {
