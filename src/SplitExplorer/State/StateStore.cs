@@ -8,8 +8,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region StateStore
-
     internal static class StateStore
     {
         private const string StateFileName = "SplitExplorer.state";
@@ -311,6 +309,4 @@ namespace SplitExplorer
             return path.Replace('\r', ' ').Replace('\n', ' ').Trim();
         }
     }
-
-    #endregion
 }

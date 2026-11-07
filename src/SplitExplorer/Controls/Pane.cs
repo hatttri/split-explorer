@@ -5,8 +5,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region Pane
-
     internal sealed class Pane : UserControl
     {
         private const int MaxTabs = 20;
@@ -813,6 +811,4 @@ namespace SplitExplorer
             base.Dispose(disposing);
         }
     }
-
-    #endregion
 }

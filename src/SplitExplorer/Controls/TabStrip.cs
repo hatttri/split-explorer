@@ -6,8 +6,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region TabStrip
-
     internal sealed class TabStrip : Control
     {
         private static readonly Font IconFont = SystemIconFont.Create(12f);
@@ -324,6 +322,4 @@ namespace SplitExplorer
             }
         }
     }
-
-    #endregion
 }

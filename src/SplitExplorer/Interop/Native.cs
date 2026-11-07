@@ -6,8 +6,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region Native
-
     public static class Native
     {
         public const int WM_KEYDOWN = 0x0100;
@@ -267,6 +265,4 @@ namespace SplitExplorer
             return scaled < 1 ? 1 : scaled;
         }
     }
-
-    #endregion
 }

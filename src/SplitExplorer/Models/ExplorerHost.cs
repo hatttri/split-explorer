@@ -5,8 +5,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region ExplorerHost
-
     internal sealed class ExplorerHost : IDisposable
     {
         private IExplorerBrowser _browser;
@@ -410,6 +408,4 @@ namespace SplitExplorer
             NavigationFailed = null;
         }
     }
-
-    #endregion
 }

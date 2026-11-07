@@ -3,8 +3,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region Program
-
     internal static class Program
     {
         [STAThread]
@@ -22,6 +20,4 @@ namespace SplitExplorer
             Application.Run(form);
         }
     }
-
-    #endregion
 }

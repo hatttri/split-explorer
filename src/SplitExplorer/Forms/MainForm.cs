@@ -5,8 +5,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region MainForm
-
     internal sealed class MainForm : Form, IMessageFilter
     {
         private sealed class RestoreJob
@@ -625,6 +623,4 @@ namespace SplitExplorer
             base.Dispose(disposing);
         }
     }
-
-    #endregion
 }

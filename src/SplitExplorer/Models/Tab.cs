@@ -6,8 +6,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region Tab
-
     internal sealed class Tab : IDisposable
     {
         private readonly Pane _pane;
@@ -473,6 +471,4 @@ namespace SplitExplorer
             }
         }
     }
-
-    #endregion
 }

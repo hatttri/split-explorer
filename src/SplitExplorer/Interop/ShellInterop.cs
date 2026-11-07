@@ -3,8 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace SplitExplorer
 {
-    #region ShellInterop
-
     internal static class ShellIds
     {
         public static readonly Guid ExplorerBrowserClsid =
@@ -181,6 +179,4 @@ namespace SplitExplorer
             }
         }
     }
-
-    #endregion
 }

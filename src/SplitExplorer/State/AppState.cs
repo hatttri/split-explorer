@@ -3,8 +3,6 @@ using System.Drawing;
 
 namespace SplitExplorer
 {
-    #region AppState
-
     internal sealed class AppState
     {
         public bool HasWindow;
@@ -24,6 +22,4 @@ namespace SplitExplorer
             }
         }
     }
-
-    #endregion
 }

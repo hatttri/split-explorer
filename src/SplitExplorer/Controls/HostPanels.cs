@@ -3,8 +3,6 @@ using System.Windows.Forms;
 
 namespace SplitExplorer
 {
-    #region Host Controls
-
     internal sealed class HostPanel : Control
     {
         public HostPanel()
@@ -74,6 +72,4 @@ namespace SplitExplorer
             }
         }
     }
-
-    #endregion
 }
