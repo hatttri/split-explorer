@@ -26,7 +26,7 @@ namespace SplitExplorer
 
         private Pane _activePane;
         private bool _layingOut;
-        private bool _uiReady;
+        private readonly bool _uiReady;
         private bool _restoreComplete;
         private bool _closing;
         private bool _shutDown;

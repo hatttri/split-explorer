@@ -78,7 +78,7 @@ namespace SplitExplorer
             int separatorWidth = Scale(16);
             int horizontalPadding = Scale(5);
             int height = ClientSize.Height;
-            _segments.ForEach(delegate(Segment segment) { segment.Bounds = Rectangle.Empty; });
+            _segments.ForEach(delegate (Segment segment) { segment.Bounds = Rectangle.Empty; });
 
             for (int i = 0; i < _segments.Count; i++)
             {

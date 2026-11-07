@@ -171,7 +171,7 @@ namespace SplitExplorer
             IntPtr directUi = IntPtr.Zero;
             IntPtr defView = IntPtr.Zero;
 
-            EnumChildProc proc = delegate(IntPtr hWnd, IntPtr lParam)
+            EnumChildProc proc = delegate (IntPtr hWnd, IntPtr lParam)
             {
                 if (!IsWindowVisible(hWnd) || !IsWindowEnabled(hWnd))
                 {

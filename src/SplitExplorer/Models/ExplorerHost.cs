@@ -12,7 +12,7 @@ namespace SplitExplorer
         private IExplorerBrowser _browser;
         private ExplorerBrowserEvents _events;
         private Control _hostControl;
-        private uint _cookie;
+        private readonly uint _cookie;
         private bool _advised;
         private bool _disposed;
         private bool _hasBounds;

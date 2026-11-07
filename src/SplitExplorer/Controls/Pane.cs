@@ -31,7 +31,7 @@ namespace SplitExplorer
         private int _selectedIndex = -1;
         private bool _active;
         private bool _shutDown;
-        private bool _layoutReady;
+        private readonly bool _layoutReady;
         private float _scale = 1f;
         private IntPtr _lastViewFocus = IntPtr.Zero;
 
