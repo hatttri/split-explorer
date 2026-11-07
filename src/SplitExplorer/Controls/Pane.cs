@@ -54,13 +54,13 @@ namespace SplitExplorer
             _backButton = CreateNavButton(NavigationGlyph.Back, "戻る");
             _forwardButton = CreateNavButton(NavigationGlyph.Forward, "進む");
             _upButton = CreateNavButton(NavigationGlyph.Parent, "親フォルダー");
-            _refreshButton = CreateNavButton(NavigationGlyph.Refresh, "最新の状態へ更新");
+            _refreshButton = CreateNavButton(NavigationGlyph.Refresh, "最新の情報に更新");
             _refreshButton.Click += delegate { RefreshActiveTab(); };
             _navigationToolTip = new ToolTip();
             _navigationToolTip.SetToolTip(_backButton, "戻る");
             _navigationToolTip.SetToolTip(_forwardButton, "進む");
             _navigationToolTip.SetToolTip(_upButton, "親フォルダー");
-            _navigationToolTip.SetToolTip(_refreshButton, "最新の状態へ更新");
+            _navigationToolTip.SetToolTip(_refreshButton, "最新の情報に更新");
 
             _addressFrame = new AddressBarFrame();
             _breadcrumbBar = new BreadcrumbBar();
