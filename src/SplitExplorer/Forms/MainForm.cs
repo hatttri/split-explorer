@@ -446,12 +446,6 @@ namespace SplitExplorer
                 }
             }
 
-            if (!control && !alt && key == Keys.F6)
-            {
-                pane.FocusAddressBar();
-                return true;
-            }
-
             if (alt && !control && !shift)
             {
                 if (key >= Keys.D1 && key <= Keys.D4)
